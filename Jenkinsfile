@@ -9,7 +9,7 @@ pipeline {
     stage('Prepare') {
       steps {
         sh '''
-          chmod +x app/greet.sh tests/test_greet.sh || true
+          chmod +x /greet.sh /test_greet.sh || true
           mkdir -p dist
         '''
       }
@@ -19,7 +19,7 @@ pipeline {
       steps {
         sh '''
           echo "Running tests..."
-          ./tests/test_greet.sh
+          ./test_greet.sh
         '''
       }
     }
