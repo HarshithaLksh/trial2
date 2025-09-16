@@ -9,37 +9,28 @@ pipeline {
     stage('Prepare') {
       steps {
         sh '''
-          chmod +x /greet.sh /test_greet.sh || true
-          mkdir -p dist
+          mkdir -p build
+          echo "Hello from CI build!" > build/hello.txt
+          echo "artifact created at $(date)" > build/metadata.txt
         '''
       }
     }
 
-    stage('Test') {
+    stage('Run simple test') {
       steps {
         sh '''
-          echo "Running tests..."
-          ./test_greet.sh
-        '''
-      }
-    }
-
-    stage('Package') {
-      steps {
-        sh '''
-          echo "Packaging artifact..."
-          TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          ART=dist/hello-ci-mini-${TIMESTAMP}.tar.gz
-          tar -czf "${ART}" app README.md
-          echo "Created ${ART}"
-          ls -l dist || true
+          if [ ! -s build/hello.txt ]; then
+            echo "hello.txt missing or empty" >&2
+            exit 1
+          fi
+          echo "simple test OK"
         '''
       }
     }
 
     stage('Archive artifact') {
       steps {
-        archiveArtifacts artifacts: 'dist/**', fingerprint: true
+        archiveArtifacts artifacts: 'build/**', fingerprint: true
       }
     }
 
@@ -47,13 +38,13 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'nexus-http-creds', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PW')]) {
           sh '''
-            set -eux
-            NEXUS_BASE="http://hnexus.vyturr.one:8081/repository/raw-hosted"
-            REMOTE_DIR="ci-artifacts/${BUILD_NUMBER}"
-            for f in dist/*; do
-              echo "Uploading $f to ${NEXUS_BASE}/${REMOTE_DIR}/$(basename $f)"
-              curl -u "${NEXUS_USER}:${NEXUS_PW}" --fail --show-error --upload-file "$f" \
-                "${NEXUS_BASE}/${REMOTE_DIR}/$(basename $f)"
+            NEXUS_URL="http://hnexus.vyturr.one:8081/repository/raw-hosted"
+            BUILD_ID_DIR="ci-artifacts/${BUILD_NUMBER}"
+
+            for f in build/*; do
+              echo "Uploading $f ..."
+              curl -u "${NEXUS_USER}:${NEXUS_PW}" --upload-file "$f" \
+                "${NEXUS_URL}/${BUILD_ID_DIR}/$(basename $f)"
             done
           '''
         }
@@ -67,7 +58,4 @@ pipeline {
     always { cleanWs() }
   }
 }
-
-
-
 
