@@ -1,0 +1,5 @@
+
+#!/usr/bin/env bash
+# simple demo app - prints greeting message
+NAME="${1:-World}"
+echo "Hello, ${NAME}!"
