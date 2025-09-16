@@ -10,7 +10,7 @@ pipeline {
       steps {
         sh '''
           mkdir -p build
-          echo "Hello from 3 CI build!" > build/hello.txt
+          echo "Hello frombuild!" > build/hello.txt
           echo "artifact created at $(date)" > build/metadata.txt
         '''
       }
@@ -19,7 +19,6 @@ pipeline {
     stage('Run simple test') {
       steps {
         sh '''
-          # dummy test: fail if hello.txt missing or empty
           if [ ! -s build/hello.txt ]; then
             echo "hello.txt missing or empty" >&2
             exit 1
@@ -35,19 +34,6 @@ pipeline {
       }
     }
 
-    stage('Print artifact path') {
-      steps {
-        sh 'echo "Artifact archived to Jenkins (see Build → Artifacts). Files:" && ls -l build'
-      }
-    }
-  }
-
-  post {
-    success { echo "Pipeline succeeded." }
-    failure { echo "Pipeline failed — check console output." }
-    always { cleanWs() }
-  }
-}
     stage('Upload to Nexus (raw)') {
       steps {
         withCredentials([usernamePassword(credentialsId: 'nexus-http-creds', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PW')]) {
@@ -64,5 +50,14 @@ pipeline {
         }
       }
     }
+  }
+
+  post {
+    success { echo "Pipeline succeeded." }
+    failure { echo "Pipeline failed — check console output." }
+    always { cleanWs() }
+  }
+}
+
 
 
